@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '@/components/PageHeader';
@@ -17,6 +17,8 @@ type ProblemFormState = {
   description: string;
   severity: ProblemSeverity;
 };
+
+const MESSAGES_PAGE_SIZE = 5;
 
 const severityOptions: Array<{ value: ProblemSeverity; label: string }> = [
   { value: 'LOW', label: 'Низкая' },
@@ -62,6 +64,38 @@ function getSeverityLabel(value: ProblemSeverity) {
   return 'Высокая';
 }
 
+function getStatusLabel(status: string) {
+  if (status === 'PENDING') {
+    return 'На проверке';
+  }
+
+  if (status === 'APPROVED') {
+    return 'Одобрено';
+  }
+
+  if (status === 'REJECTED') {
+    return 'Отклонено';
+  }
+
+  return status;
+}
+
+function getStatusBadgeClass(status: string) {
+  if (status === 'PENDING') {
+    return 'uproblem-badge--pending';
+  }
+
+  if (status === 'APPROVED') {
+    return 'uproblem-badge--approved';
+  }
+
+  if (status === 'REJECTED') {
+    return 'uproblem-badge--rejected';
+  }
+
+  return 'uproblem-badge--info';
+}
+
 export default function ReportProblemPage() {
   const [waterBodies, setWaterBodies] = useState<WaterBody[]>([]);
   const [myProblems, setMyProblems] = useState<WaterProblem[]>([]);
@@ -78,6 +112,7 @@ export default function ReportProblemPage() {
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     let active = true;
@@ -101,6 +136,7 @@ export default function ReportProblemPage() {
 
         setWaterBodies(safeWaterBodies);
         setMyProblems(safeProblems);
+        setCurrentPage(1);
 
         setForm((prev) => ({
           ...prev,
@@ -156,15 +192,70 @@ export default function ReportProblemPage() {
     });
   }, [myProblems]);
 
-  const approvedHistory = useMemo(() => {
+  const history = useMemo(() => {
     return myProblems
       .filter((problem) => problem.status === 'APPROVED')
       .sort((a, b) => {
-        const aTime = new Date(a.createdAt).getTime();
-        const bTime = new Date(b.createdAt).getTime();
+        const aTime = new Date(a.createdAt || '').getTime();
+        const bTime = new Date(b.createdAt || '').getTime();
         return bTime - aTime;
       });
   }, [myProblems]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [history.length]);
+
+  const totalPages = useMemo(() => {
+    if (!history.length) {
+      return 1;
+    }
+
+    return Math.ceil(history.length / MESSAGES_PAGE_SIZE);
+  }, [history]);
+
+  const paginatedHistory = useMemo(() => {
+    const startIndex = (currentPage - 1) * MESSAGES_PAGE_SIZE;
+    const endIndex = startIndex + MESSAGES_PAGE_SIZE;
+    return history.slice(startIndex, endIndex);
+  }, [history, currentPage]);
+
+  const visiblePages = useMemo(() => {
+    const pages: number[] = [];
+
+    let start = currentPage - 2;
+    let end = currentPage + 2;
+
+    if (start < 1) {
+      start = 1;
+      end = Math.min(5, totalPages);
+    }
+
+    if (end > totalPages) {
+      end = totalPages;
+      start = Math.max(1, totalPages - 4);
+    }
+
+    let page = start;
+    while (page <= end) {
+      pages.push(page);
+      page += 1;
+    }
+
+    return pages;
+  }, [currentPage, totalPages]);
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
 
   function handleChange(
     event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -213,7 +304,6 @@ export default function ReportProblemPage() {
       const createdProblem = await api.createProblem(payload);
 
       setSuccess('Проблема успешно отправлена');
-
       setMyProblems((prev) => [createdProblem, ...prev]);
 
       setForm((prev) => ({
@@ -342,58 +432,93 @@ export default function ReportProblemPage() {
         <section className="uproblem-card">
           <div className="uproblem-head">
             <div>
-              <h2 className="uproblem-title">История одобренных сообщений</h2>
+              <h2 className="uproblem-title">История сообщений</h2>
               <p className="uproblem-text">
-                Здесь отображаются только те сообщения, которые были одобрены администраторами. Они уже находятся в работе и скоро будут проверены на месте.
+                Здесь отображаются только одобренные сообщения.
               </p>
             </div>
           </div>
 
-          {approvedHistory.length === 0 ? (
-            <div className="uproblem-empty">
-              Пока нет сообщений со статусом «Одобрено»
-            </div>
+          {history.length === 0 ? (
+            <div className="uproblem-empty">Пока нет одобренных сообщений</div>
           ) : (
-            <div className="uproblem-history">
-              {approvedHistory.map((problem) => (
-                <article key={problem.id} className="uproblem-history-card">
-                  <div className="uproblem-history-top">
-                    <h3 className="uproblem-history-title">{problem.title}</h3>
+            <>
+              <div className="uproblem-history">
+                {paginatedHistory.map((problem) => (
+                  <article key={problem.id} className="uproblem-history-card">
+                    <div className="uproblem-history-top">
+                      <h3 className="uproblem-history-title">{problem.title}</h3>
 
-                    <div className="uproblem-history-tags">
-                      <span className="uproblem-badge uproblem-badge--approved">
-                        Одобрено
+                      <div className="uproblem-history-tags">
+                        <span className={`uproblem-badge ${getStatusBadgeClass(problem.status)}`}>
+                          {getStatusLabel(problem.status)}
+                        </span>
+                        <span className="uproblem-badge uproblem-badge--severity">
+                          {getSeverityLabel(problem.severity)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <p className="uproblem-history-desc">{problem.description}</p>
+
+                    <div className="uproblem-history-meta">
+                      <span>
+                        <strong>Дата:</strong> {formatDate(problem.createdAt)}
                       </span>
-                      <span className="uproblem-badge uproblem-badge--severity">
-                        {getSeverityLabel(problem.severity)}
+
+                      <span>
+                        <strong>Водоём:</strong> {problem.waterBody?.name || problem.waterBodyId || '—'}
                       </span>
                     </div>
-                  </div>
 
-                  <p className="uproblem-history-desc">{problem.description}</p>
+                    {problem.moderationNote ? (
+                      <div className="uproblem-history-note">
+                        <strong>Комментарий администратора:</strong> {problem.moderationNote}
+                      </div>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
 
-                  <div className="uproblem-history-meta">
-                    <span>
-                      <strong>Дата:</strong> {formatDate(problem.createdAt)}
-                    </span>
+              <div className="pagination">
+                <button
+                  type="button"
+                  className="pagination__button"
+                  onClick={handlePrevPage}
+                  disabled={currentPage === 1}
+                >
+                  Назад
+                </button>
 
-                    <span>
-                      <strong>Водоём:</strong>{' '}
-                      {problem.waterBody?.name || problem.waterBodyId || '—'}
-                    </span>
-                  </div>
+                <div className="pagination__pages">
+                  {visiblePages.map((page) => (
+                    <button
+                      key={page}
+                      type="button"
+                      className={`pagination__page ${
+                        currentPage === page ? 'pagination__page--active' : ''
+                      }`}
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
 
-                  {problem.moderationNote ? (
-                    <div className="uproblem-history-note">
-                      <strong>Комментарий администратора:</strong> {problem.moderationNote}
-                    </div>
-                  ) : null}
-                </article>
-              ))}
-            </div>
+                <button
+                  type="button"
+                  className="pagination__button"
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalPages}
+                >
+                  Вперёд
+                </button>
+              </div>
+            </>
           )}
         </section>
       </div>
     </ProtectedShell>
   );
 }
+

@@ -1043,6 +1043,18 @@ strong {
   border-color: rgba(67, 181, 111, 0.2);
 }
 
+.uproblem-badge--pending {
+  background: rgba(47, 128, 255, 0.12);
+  color: #2f80ff;
+  border-color: rgba(47, 128, 255, 0.2);
+}
+
+.uproblem-badge--rejected {
+  background: rgba(225, 72, 72, 0.1);
+  color: #c23d3d;
+  border-color: rgba(225, 72, 72, 0.18);
+}
+
 .uproblem-badge--severity {
   background: rgba(255, 170, 0, 0.12);
   color: #c27b00;

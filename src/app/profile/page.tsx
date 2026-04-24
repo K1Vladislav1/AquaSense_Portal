@@ -1,6 +1,6 @@
-'use client';
+﻿'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ProtectedShell } from '@/components/ProtectedShell';
 import { PageHeader } from '@/components/PageHeader';
 import { UserAvatar } from '@/components/UserAvatar';
@@ -20,9 +20,12 @@ type PasswordFormState = {
   repeatPassword: string;
 };
 
+const PROBLEMS_PAGE_SIZE = 2;
+
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [problems, setProblems] = useState<WaterProblem[]>([]);
+  const [visibleProblemsCount, setVisibleProblemsCount] = useState(PROBLEMS_PAGE_SIZE);
 
   const [profileForm, setProfileForm] = useState<ProfileFormState>({
     login: '',
@@ -63,8 +66,11 @@ export default function ProfilePage() {
           return;
         }
 
+        const safeProblems = Array.isArray(problemsData) ? problemsData : [];
+
         setUser(profileData);
-        setProblems(Array.isArray(problemsData) ? problemsData : []);
+        setProblems(safeProblems);
+        setVisibleProblemsCount(PROBLEMS_PAGE_SIZE);
         setProfileForm({
           login: profileData.login || '',
           email: profileData.email || '',
@@ -115,6 +121,13 @@ export default function ProfilePage() {
 
     return () => window.clearTimeout(timer);
   }, [passwordSuccess]);
+
+  const visibleProblems = useMemo(
+    () => problems.slice(0, visibleProblemsCount),
+    [problems, visibleProblemsCount]
+  );
+
+  const hasMoreProblems = visibleProblems.length < problems.length;
 
   function handleProfileInputChange(event: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = event.target;
@@ -301,7 +314,9 @@ export default function ProfilePage() {
 
                       <div className={styles.badges}>
                         <span className={`${styles.badge} ${styles.badgePending}`}>Пользователь</span>
-                        <span className={`${styles.badge} ${styles.badgeSeverityHigh}`}>Проблем: {problems.length}</span>
+                        <span className={`${styles.badge} ${styles.badgeSeverityHigh}`}>
+                          Проблем: {problems.length}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -332,7 +347,7 @@ export default function ProfilePage() {
                   <div className={styles.sectionHead}>
                     <h3 className={styles.sectionTitle}>Редактирование данных</h3>
                     <p className={styles.sectionText}>
-                        Здесь вы можете изменить свои данные и пароль.
+                      Здесь вы можете изменить свои данные и пароль.
                     </p>
                   </div>
 
@@ -475,7 +490,7 @@ export default function ProfilePage() {
               <div className={styles.sectionHead}>
                 <h3 className={styles.sectionTitle}>Отправленные проблемы</h3>
                 <p className={styles.sectionText}>
-                  Здесь отображаются проблемы, которые пользователь уже отправлял
+                  Здесь отображаются проблемы, которые пользователь уже отправлял.
                 </p>
               </div>
 
@@ -483,7 +498,7 @@ export default function ProfilePage() {
                 <div className={styles.empty}>Проблемы пока не найдены</div>
               ) : (
                 <div className={styles.problemList}>
-                  {problems.map((problem) => (
+                  {visibleProblems.map((problem) => (
                     <article key={problem.id} className={styles.problemCard}>
                       <div className={styles.problemTop}>
                         <h4 className={styles.problemTitle}>{problem.title}</h4>
@@ -505,8 +520,7 @@ export default function ProfilePage() {
                           <strong>Дата:</strong> {formatDate(problem.createdAt)}
                         </span>
                         <span>
-                          <strong>Водоём:</strong>{' '}
-                          {problem.waterBody?.name || problem.waterBodyId || '—'}
+                          <strong>Водоём:</strong> {problem.waterBody?.name || problem.waterBodyId || '—'}
                         </span>
                       </div>
 
@@ -517,6 +531,18 @@ export default function ProfilePage() {
                       ) : null}
                     </article>
                   ))}
+
+                  {hasMoreProblems ? (
+                    <div className={styles.actions}>
+                      <button
+                        className={styles.button}
+                        type="button"
+                        onClick={() => setVisibleProblemsCount((prev) => prev + PROBLEMS_PAGE_SIZE)}
+                      >
+                        Показать ещё
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
               )}
             </section>
@@ -526,3 +552,4 @@ export default function ProfilePage() {
     </ProtectedShell>
   );
 }
+
