@@ -1,15 +1,10 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '@/components/PageHeader';
 import { ProtectedShell } from '@/components/ProtectedShell';
 import { api } from '@/lib/api';
-import type {
-  CreateProblemDto,
-  ProblemSeverity,
-  WaterBody,
-  WaterProblem,
-} from '@/types';
+import type { CreateProblemDto, ProblemSeverity, WaterBody, WaterProblem, } from '@/types';
 
 type ProblemFormState = {
   waterBodyId: string;
