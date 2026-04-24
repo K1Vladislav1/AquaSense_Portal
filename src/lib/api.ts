@@ -4,7 +4,7 @@ import { authStorage } from './auth';
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
-  'https://aquasense-backend-1z8b.onrender.com';
+  'https://lakes-backend-iqu6.onrender.com';
 // 'https://lakes-backend-eadc.onrender.com';
 
 type RequestOptions = RequestInit & {
