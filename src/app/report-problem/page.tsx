@@ -64,38 +64,6 @@ function getSeverityLabel(value: ProblemSeverity) {
   return 'Высокая';
 }
 
-function getStatusLabel(status: string) {
-  if (status === 'PENDING') {
-    return 'На проверке';
-  }
-
-  if (status === 'APPROVED') {
-    return 'Одобрено';
-  }
-
-  if (status === 'REJECTED') {
-    return 'Отклонено';
-  }
-
-  return status;
-}
-
-function getStatusBadgeClass(status: string) {
-  if (status === 'PENDING') {
-    return 'uproblem-badge--pending';
-  }
-
-  if (status === 'APPROVED') {
-    return 'uproblem-badge--approved';
-  }
-
-  if (status === 'REJECTED') {
-    return 'uproblem-badge--rejected';
-  }
-
-  return 'uproblem-badge--info';
-}
-
 export default function ReportProblemPage() {
   const [waterBodies, setWaterBodies] = useState<WaterBody[]>([]);
   const [myProblems, setMyProblems] = useState<WaterProblem[]>([]);
@@ -450,9 +418,6 @@ export default function ReportProblemPage() {
                       <h3 className="uproblem-history-title">{problem.title}</h3>
 
                       <div className="uproblem-history-tags">
-                        <span className={`uproblem-badge ${getStatusBadgeClass(problem.status)}`}>
-                          {getStatusLabel(problem.status)}
-                        </span>
                         <span className="uproblem-badge uproblem-badge--severity">
                           {getSeverityLabel(problem.severity)}
                         </span>
@@ -470,12 +435,6 @@ export default function ReportProblemPage() {
                         <strong>Водоём:</strong> {problem.waterBody?.name || problem.waterBodyId || '—'}
                       </span>
                     </div>
-
-                    {problem.moderationNote ? (
-                      <div className="uproblem-history-note">
-                        <strong>Комментарий администратора:</strong> {problem.moderationNote}
-                      </div>
-                    ) : null}
                   </article>
                 ))}
               </div>
