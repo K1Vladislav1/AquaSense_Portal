@@ -23,7 +23,7 @@ export default function LoginPage() {
       authStorage.setAccessToken(result.tokens.accessToken);
       authStorage.setRefreshToken(result.tokens.refreshToken);
       authStorage.setUser(result.user);
-      router.replace('/');
+      router.replace('/portal');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Не удалось выполнить вход');
     } finally {
@@ -36,14 +36,15 @@ export default function LoginPage() {
       <div className="auth-card stack">
         <div>
           <div className="eyebrow">Клиентская сторона</div>
-          <h1 className="auth-title">Вход в Lakes Client</h1>
+          <h1 className="auth-title">Вход в AquaSense Portal</h1>
           <p className="muted">Просматривайте озёра, карту, паспорт водоёма и все доступные измерения.</p>
         </div>
 
         <form className="stack" onSubmit={handleSubmit}>
-          <label className="field">
+          <label className="uproblem-field">
             <span>Email</span>
             <input
+              className="uproblem-input"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -53,9 +54,10 @@ export default function LoginPage() {
             />
           </label>
 
-          <label className="field">
+          <label className="uproblem-field">
             <span>Пароль</span>
             <input
+              className="uproblem-input"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -67,7 +69,7 @@ export default function LoginPage() {
 
           {error ? <div className="error-box">{error}</div> : null}
 
-          <button className="btn" type="submit" disabled={loading}>
+          <button className="uproblem-button" type="submit" disabled={loading}>
             {loading ? 'Вход...' : 'Войти'}
           </button>
         </form>

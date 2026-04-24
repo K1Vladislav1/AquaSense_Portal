@@ -31,7 +31,7 @@ export default function RegisterPage() {
       authStorage.setAccessToken(result.tokens.accessToken);
       authStorage.setRefreshToken(result.tokens.refreshToken);
       authStorage.setUser(result.user);
-      router.replace('/');
+      router.replace('/portal');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Не удалось создать аккаунт');
     } finally {
@@ -49,29 +49,56 @@ export default function RegisterPage() {
         </div>
 
         <form className="stack" onSubmit={handleSubmit}>
-          <label className="field">
+          <label className="uproblem-field">
             <span>Логин</span>
-            <input value={login} onChange={(e) => setLogin(e.target.value)} placeholder="Введите логин" required />
+            <input
+              className="uproblem-input"
+              value={login}
+              onChange={(e) => setLogin(e.target.value)}
+              placeholder="Введите логин"
+              required
+            />
           </label>
 
-          <label className="field">
+          <label className="uproblem-field">
             <span>Email</span>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Введите email" required />
+            <input
+              className="uproblem-input"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Введите email"
+              required
+            />
           </label>
 
-          <label className="field">
+          <label className="uproblem-field">
             <span>Пароль</span>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Введите пароль" required />
+            <input
+              className="uproblem-input"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Введите пароль"
+              required
+            />
           </label>
 
-          <label className="field">
+          <label className="uproblem-field">
             <span>Повторите пароль</span>
-            <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Повторите пароль" required />
+            <input
+              className="uproblem-input"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Повторите пароль"
+              required
+            />
           </label>
 
           {error ? <div className="error-box">{error}</div> : null}
 
-          <button className="btn" type="submit" disabled={loading}>
+          <button className="uproblem-button" type="submit" disabled={loading}>
             {loading ? 'Создание...' : 'Создать аккаунт'}
           </button>
         </form>

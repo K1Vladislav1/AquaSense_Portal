@@ -2,32 +2,69 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { authStorage } from '@/lib/auth';
+import { useEffect, useRef, useState } from 'react';
+import { api } from '@/lib/api';
 import { User } from '@/types';
 import { UserAvatar } from './UserAvatar';
 
 const navLinks = [
-  { href: '/', label: 'Главная' },
+  { href: '/portal', label: 'Главная' },
   { href: '/water-bodies', label: 'Озёра' },
-  { href: '/profile', label: 'Личный кабинет' },
+  { href: 'https://kay12dar-ecowaterai-app-ivrgcv.streamlit.app/', label: 'ИИ-анализ', external: true },
+  { href: '/report-problem', label: 'Сообщить о проблеме' },
 ];
 
 export function Header({ user }: { user: User | null }) {
   const pathname = usePathname();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement | null>(null);
 
-  const closeMenu = () => setIsOpen(false);
+  const closeMenu = () => {
+    setIsOpen(false);
+    setIsProfileMenuOpen(false);
+  };
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (!profileMenuRef.current?.contains(event.target as Node)) {
+        setIsProfileMenuOpen(false);
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsProfileMenuOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, []);
+
+  const handleProfileNavigate = () => {
+    closeMenu();
+    router.push('/profile');
+  };
+
+  const handleLogout = () => {
+    closeMenu();
+    api.logout();
+  };
 
   return (
     <header className="site-header">
       <div className="site-header__inner">
-        <Link href="/" className="brand-block" onClick={closeMenu}>
-          <span className="brand-badge">LC</span>
-
+        <Link href="/portal" className="brand-block" onClick={closeMenu}>
+          <div className="landing-logo__icon">A</div>
           <div className="brand-copy">
-            <div className="brand-title">Lakes Client</div>
+            <div className="brand-title">AquaSense Portal</div>
             <div className="brand-subtitle">Мониторинг озёр и показателей воды</div>
           </div>
         </Link>
@@ -46,19 +83,41 @@ export function Header({ user }: { user: User | null }) {
 
         <nav className={`header-nav ${isOpen ? 'open' : ''}`} aria-label="Основная навигация">
           {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={pathname === link.href ? 'is-active' : ''}
-              onClick={closeMenu}
-            >
-              {link.label}
-            </Link>
+            link.external ? (
+              <a
+                key={link.href}
+                href={link.href}
+                target="_blank"
+                rel="noreferrer"
+                onClick={closeMenu}
+              >
+                {link.label}
+              </a>
+            ) : (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={pathname === link.href || pathname.startsWith(`${link.href}/`) ? 'is-active' : ''}
+                onClick={closeMenu}
+              >
+                {link.label}
+              </Link>
+            )
           ))}
         </nav>
 
-        <div className={`header-user ${isOpen ? 'open' : ''}`}>
-          <Link href="/profile" className="profile-chip" onClick={closeMenu}>
+        <div
+          ref={profileMenuRef}
+          className={`header-user ${isOpen ? 'open' : ''} ${isProfileMenuOpen ? 'menu-open' : ''}`}
+        >
+          <button
+            type="button"
+            className="profile-chip profile-chip--button"
+            onClick={() => setIsProfileMenuOpen((prev) => !prev)}
+            aria-haspopup="menu"
+            aria-expanded={isProfileMenuOpen}
+            aria-label="Открыть меню профиля"
+          >
             <UserAvatar
               name={user?.login || user?.email}
               avatarUrl={user?.avatarUrl}
@@ -68,17 +127,29 @@ export function Header({ user }: { user: User | null }) {
               <div className="profile-chip__name">{user?.login || 'Пользователь'}</div>
               <div className="profile-chip__meta">{user?.email || 'Открыть профиль'}</div>
             </div>
-          </Link>
-
-          <button
-            className="btn secondary"
-            onClick={() => {
-              authStorage.clear();
-              router.replace('/login');
-            }}
-          >
-            Выйти
+            <span className={`profile-chip__caret ${isProfileMenuOpen ? 'is-open' : ''}`} aria-hidden="true">
+              ▾
+            </span>
           </button>
+
+          <div className={`profile-dropdown ${isProfileMenuOpen ? 'open' : ''}`} role="menu">
+            <button
+              type="button"
+              className="profile-dropdown__item"
+              onClick={handleProfileNavigate}
+              role="menuitem"
+            >
+              Личный кабинет
+            </button>
+            <button
+              type="button"
+              className="profile-dropdown__item profile-dropdown__item--danger"
+              onClick={handleLogout}
+              role="menuitem"
+            >
+              Выйти
+            </button>
+          </div>
         </div>
       </div>
     </header>

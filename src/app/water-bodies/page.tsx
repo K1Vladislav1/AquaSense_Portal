@@ -8,7 +8,7 @@ export default function WaterBodiesPage() {
       <div className="stack">
         <PageHeader
           title="Озёра"
-          description="Карта MapLibre со всеми водоёмами из базы данных, выбор через карту или dropdown."
+          description="Поиск и просмотр водоёмов Северо-Казахстанской области на карте."
         />
         <WaterBodiesExplorer />
       </div>

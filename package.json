@@ -9,13 +9,16 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "leaflet": "^1.9.4",
     "maplibre-gl": "5.21.1",
     "next": "15.2.8",
     "react": "19.0.0",
     "react-dom": "19.0.0",
+    "react-leaflet": "^5.0.0",
     "recharts": "2.15.1"
   },
   "devDependencies": {
+    "@types/leaflet": "^1.9.21",
     "@types/node": "20.17.30",
     "@types/react": "19.0.12",
     "@types/react-dom": "19.0.4",

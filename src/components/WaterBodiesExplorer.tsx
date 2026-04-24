@@ -1,105 +1,257 @@
 'use client';
 
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
-import { WaterBody } from '@/types';
-import { MapSelector } from './MapSelector';
+import type { WaterBody } from '@/types';
+
+const MapSelector = dynamic(
+  () => import('./MapSelector').then((mod) => mod.MapSelector),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="wb-map-empty wb-map-empty--center">
+        Загрузка карты...
+      </div>
+    ),
+  },
+);
 
 export function WaterBodiesExplorer() {
   const [waterBodies, setWaterBodies] = useState<WaterBody[]>([]);
   const [selectedId, setSelectedId] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkScreen = () => {
+      const mobile = window.innerWidth <= 960;
+      setIsMobile(mobile);
+
+      if (mobile) {
+        setIsSidebarOpen(false);
+      } else {
+        setIsSidebarOpen(true);
+      }
+    };
+
+    checkScreen();
+    window.addEventListener('resize', checkScreen);
+
+    return () => {
+      window.removeEventListener('resize', checkScreen);
+    };
+  }, []);
 
   useEffect(() => {
     void api
       .getWaterBodies()
       .then((items) => {
         setWaterBodies(items);
-        if (items[0]?.id) {
-          setSelectedId(items[0].id);
-        }
       })
       .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : 'Не удалось загрузить список озёр');
+        setError(
+          err instanceof Error ? err.message : 'Не удалось загрузить список озёр',
+        );
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
-  const selectedWaterBody = useMemo(
-    () => waterBodies.find((item) => item.id === selectedId) ?? null,
-    [selectedId, waterBodies],
-  );
+  const filteredWaterBodies = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    if (!query) {
+      return waterBodies;
+    }
+
+    return waterBodies.filter((item) =>
+      item.name.toLowerCase().includes(query),
+    );
+  }, [search, waterBodies]);
+
+  const selectedWaterBody = useMemo(() => {
+    return filteredWaterBodies.find((item) => item.id === selectedId) ?? null;
+  }, [filteredWaterBodies, selectedId]);
+
+  const handleSelect = (id: string) => {
+    setSelectedId(id);
+
+    if (isMobile) {
+      setIsSidebarOpen(false);
+    }
+  };
+
+  const formatArea = (value?: number | null) => {
+    if (value == null) {
+      return 'Не указана';
+    }
+
+    return `${(value / 100).toLocaleString('ru-RU', { maximumFractionDigits: 2 })} км²`;
+  };
+
+  const formatDepth = (value?: number | null) => {
+    if (value == null) {
+      return 'Не указана';
+    }
+
+    return `${value} м`;
+  };
 
   if (loading) {
-    return <div className="card">Загрузка карты и списка озёр...</div>;
+    return (
+      <div className="wb-map-empty wb-map-empty--center">
+        Загрузка карты и списка озёр...
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="card">{error}</div>;
+    return <div className="wb-map-empty wb-map-empty--center">{error}</div>;
   }
 
   return (
-    <div className="grid explorer-grid">
-      <div className="card stack">
-        <div>
-          <h3>Карта водоёмов</h3>
-          <p className="muted">Выберите водоём на карте MapLibre или через выпадающий список.</p>
-        </div>
+    <div className="wb-map-shell">
+      <div
+        className={`wb-map-page ${
+          !isSidebarOpen ? 'wb-map-page--sidebar-collapsed' : ''
+        }`}
+      >
+        {!isSidebarOpen && (
+          <button
+            type="button"
+            className="wb-map-toggle"
+            onClick={() => setIsSidebarOpen(true)}
+            aria-label="Открыть список озёр"
+          >
+            ☰
+          </button>
+        )}
 
-        <label className="field">
-          <span>Выбор озера</span>
-          <select value={selectedId} onChange={(e) => setSelectedId(e.target.value)}>
-            {waterBodies.map((waterBody) => (
-              <option key={waterBody.id} value={waterBody.id}>
-                {waterBody.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        {isMobile && isSidebarOpen && (
+          <div
+            className="wb-map-overlay"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
 
-        <MapSelector waterBodies={waterBodies} selectedId={selectedId} onSelect={setSelectedId} />
-      </div>
-
-      <aside className="card stack explorer-side">
-        <h3>Выбранный водоём</h3>
-
-        {selectedWaterBody ? (
-          <>
-            <div className="stack compact-stack">
+        <aside
+          className={`wb-map-sidebar ${
+            isSidebarOpen ? 'wb-map-sidebar--open' : 'wb-map-sidebar--closed'
+          }`}
+        >
+          <div className="wb-map-sidebar__top">
+            <div className="wb-map-sidebar__top-row">
               <div>
-                <div className="muted small-text">Название</div>
-                <div className="stat-value">{selectedWaterBody.name}</div>
+                <h2 className="wb-map-sidebar__title">Карта озёр</h2>
+                <p className="wb-map-sidebar__subtitle">
+                  Выберите озеро в списке или на карте
+                </p>
               </div>
-              <div>
-                <div className="muted small-text">Район</div>
-                <div>{selectedWaterBody.district || '—'}</div>
-              </div>
-              <div>
-                <div className="muted small-text">Описание</div>
-                <div>{selectedWaterBody.locationDesc || '—'}</div>
-              </div>
-              <div className="mini-grid">
-                <div>
-                  <div className="muted small-text">Широта</div>
-                  <div>{selectedWaterBody.latitude ?? '—'}</div>
-                </div>
-                <div>
-                  <div className="muted small-text">Долгота</div>
-                  <div>{selectedWaterBody.longitude ?? '—'}</div>
-                </div>
-              </div>
+
+              <button
+                type="button"
+                className="wb-map-sidebar__close"
+                onClick={() => setIsSidebarOpen(false)}
+                aria-label="Закрыть список озёр"
+              >
+                ✕
+              </button>
             </div>
 
-            <Link className="btn" href={`/water-bodies/${selectedWaterBody.id}`}>
-              Перейти к дашборду водоёма
-            </Link>
-          </>
-        ) : (
-          <div className="muted">Выберите водоём.</div>
-        )}
-      </aside>
+            <div className="wb-map-search">
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                type="text"
+                className="wb-map-search__input"
+                placeholder="Поиск по названию озера..."
+              />
+            </div>
+          </div>
+
+          <div className="wb-map-sidebar__list">
+            {filteredWaterBodies.length === 0 ? (
+              <div className="wb-map-empty">Ничего не найдено</div>
+            ) : (
+              filteredWaterBodies.map((lake) => (
+                <button
+                  key={lake.id}
+                  type="button"
+                  className={`wb-lake-card ${
+                    selectedId === lake.id ? 'wb-lake-card--active' : ''
+                  }`}
+                  onClick={() => handleSelect(lake.id)}
+                >
+                  <div className="wb-lake-card__image-wrap">
+                    <img
+                      src={
+                        lake.imageUrl || '/images/lakes/Blue-Lake-Clipart.webp'
+                      }
+                      alt={lake.name}
+                      className="wb-lake-card__image"
+                    />
+                  </div>
+
+                  <div className="wb-lake-card__content">
+                    <div className="wb-lake-card__head">
+                      <h3 className="wb-lake-card__title">{lake.name}</h3>
+                    </div>
+
+                    <div className="wb-lake-card__meta">
+                      <div className="wb-lake-card__meta-row">
+                        <span className="wb-lake-card__label">Район:</span>
+                        <span className="wb-lake-card__value">
+                          {lake.district || 'Не указан'}
+                        </span>
+                      </div>
+
+                      <div className="wb-lake-card__meta-row">
+                        <span className="wb-lake-card__label">Площадь:</span>
+                        <span className="wb-lake-card__value">
+                          {formatArea(lake.passport?.area)}
+                        </span>
+                      </div>
+
+                      <div className="wb-lake-card__meta-row">
+                        <span className="wb-lake-card__label">Глубина:</span>
+                        <span className="wb-lake-card__value">
+                          {formatDepth(lake.passport?.maxDepth)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="wb-lake-card__actions">
+                      <Link
+                        href={`/water-bodies/${lake.id}`}
+                        className="wb-lake-card__link"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        Дашборд водоёма
+                      </Link>
+                    </div>
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        </aside>
+
+        <div className="wb-map-content">
+          <MapSelector
+            waterBodies={filteredWaterBodies}
+            selectedId={selectedId}
+            onSelect={handleSelect}
+            isSidebarOpen={isSidebarOpen}
+          />
+
+        </div>
+      </div>
     </div>
   );
 }

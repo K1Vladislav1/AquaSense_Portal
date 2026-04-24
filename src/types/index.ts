@@ -1,11 +1,15 @@
 export type UserRole = 'ADMIN' | 'CLIENT';
 
+export type ProblemSeverity = 'LOW' | 'MEDIUM' | 'HIGH';
+export type ProblemStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
 export interface User {
   id: string;
   login: string;
   email: string;
   avatarUrl?: string | null;
   role: UserRole;
+  isActive?: boolean;
 }
 
 export interface LoginResponse {
@@ -17,6 +21,8 @@ export interface LoginResponse {
 }
 
 export interface WaterBodyPassport {
+  id?: string;
+  waterBodyId?: string;
   area?: number | null;
   overgrowthArea?: number | null;
   altitude?: number | null;
@@ -74,10 +80,44 @@ export interface WaterBody {
   locationDesc?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  imageUrl?: string | null;
   boundaries?: unknown;
   cadastralNumber?: string | null;
   passport?: WaterBodyPassport | null;
   measurements?: Measurement[];
+}
+
+export interface WaterProblem {
+  id: string;
+  userId: string;
+  waterBodyId: string;
+  title: string;
+  description: string;
+  severity: ProblemSeverity;
+  status: ProblemStatus;
+  moderationNote?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  user?: User;
+  waterBody?: WaterBody;
+}
+
+export interface UpdateProfileDto {
+  login?: string;
+  email?: string;
+  avatarUrl?: string;
+}
+
+export interface CreateProblemDto {
+  waterBodyId: string;
+  title: string;
+  description: string;
+  severity?: ProblemSeverity;
+}
+
+export interface ChangePasswordDto {
+  currentPassword: string;
+  newPassword: string;
 }
 
 export type NumericMeasurementKey =

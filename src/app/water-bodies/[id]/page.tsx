@@ -3,7 +3,11 @@ import { ProtectedShell } from '@/components/ProtectedShell';
 import { PageHeader } from '@/components/PageHeader';
 import { WaterBodyDashboard } from '@/components/WaterBodyDashboard';
 
-export default async function WaterBodyPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function WaterBodyPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
 
   return (
