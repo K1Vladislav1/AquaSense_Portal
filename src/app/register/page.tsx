@@ -45,7 +45,7 @@ export default function RegisterPage() {
         <div>
           <div className="eyebrow">Новый клиент</div>
           <h1 className="auth-title">Регистрация</h1>
-          <p className="muted">Регистрация отправляет роль CLIENT и не содержит административных сценариев.</p>
+          <p className="muted">Создайте аккаунт клиента, чтобы воспользоватся всем функционалом портала.</p>
         </div>
 
         <form className="stack" onSubmit={handleSubmit}>
