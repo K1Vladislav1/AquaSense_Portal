@@ -295,7 +295,7 @@ export default function ReportProblemPage() {
             <div>
               <h2 className="uproblem-title">Форма обращения</h2>
               <p className="uproblem-text">
-                Опишите проблему максимально понятно, чтобы её было проще проверить.
+               Опишите проблему максимально подробно для быстрой проверки и решения проблемы.
               </p>
             </div>
           </div>
